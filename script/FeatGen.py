@@ -1,9 +1,9 @@
 import sys
 import argparse
-import os;
+import os
 from subprocess import *
 
-binFeat = "/nobackup/xmeng/toolchain-authorship/toolchain-identification/feature-extraction/func-features/binFeat"
+binFeat = "../install/bin/extractFeat"
 compilerList = ["GCC", "ICC", "LLVM", "PGI"]
 
 def getParameters():

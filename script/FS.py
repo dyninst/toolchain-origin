@@ -1,9 +1,19 @@
 import sys
 import os
 import math
-from subprocess import *
+import argparse
 
 compilerList = ["GCC", "ICC", "LLVM", "PGI"]
+
+def getParameters():
+    parser = argparse.ArgumentParser(description='Perform feature selection')
+    parser.add_argument("--filelist", help="A list of binaries for training", required=True)
+    parser.add_argument("--datadir", help="The directory storing extracted features", required = True)
+    parser.add_argument("--keep", type=int, help="The number of selected features", required= True)
+    parser.add_argument("--output", help="The output file of chosen features", required=True)
+    args = parser.parse_args()
+    return args 
+
 
 def GetToolchainInfo(parts):
     for i in range(len(parts)):
@@ -12,22 +22,26 @@ def GetToolchainInfo(parts):
     assert(0 and "Should not be here!")
     return None
 
+def GetDataFiles():
+    files = []
+    for fileline in open(args.filelist, "r"):
+        parts = fileline[:-1].split("/")
+	filename = parts[-1]
+	proj, compiler, version, opt = GetToolchainInfo(parts)
+	prefix = os.path.join(args.datadir , "{0}_{1}_{2}_{3}_{4}".format(proj, compiler, version, opt, filename))
+	files.append( prefix + ".data" )
+    return files
+
 
 
 def term(xy, x, y):
     if xy < 0.0000001 and xy > -0.0000001 : return 0
     return xy * math.log(xy / x / y)
 
-#def PreScanData():
-
 def Count(pfeat, plabel, plabelfeat):
     total = 0
-    for fileline in open("data/{0}.train".format(test), "r"):
-        parts = fileline[:-1].split("/")
-	filename = parts[-1]
-	proj, compiler, version, opt = GetToolchainInfo(parts)
-	prefix = os.path.join("data" , "{0}_{1}_{2}_{3}_{4}".format(proj, compiler, version, opt, filename))
-	for line in open(prefix + ".data", "r"):
+    for filename in dataFiles:
+	for line in open(filename, "r"):
 	    if len(line) < 2: continue
             parts = line[:-1].split("\t")
 	    label = parts[0]
@@ -80,14 +94,44 @@ def MI():
 	        mi += term(plabel[label], plabel[label], 1 - pfeat[feat])
 	rank.append( (mi, feat) )
 	
-    # Sort the features in non-increasing order of their MI
+    # Sort the features in non-increasing order of their MI    
     rank.sort(reverse=True)
-    for i in range(keep):
-        print rank[i][1]
+    choose = []
+    for i in range(args.keep):
+        choose.append(int(rank[i][1]))
+    return choose
 
+def LoadAllFeatures(featFile):
+    f = []
+    for line in open(featFile, "r"):
+        f.append(line[:-1].split()[1])
+    return f
 
-testFolds = int(sys.argv[1])
-test = int(sys.argv[2])
-keep = int(sys.argv[3])
-#totalInstance, totalLabel = PreScanData(testFolds)
-MI()  
+def ScaleFeatures():
+    scale = {}
+    keepFeat = set()
+    for index in choose:
+        keepFeat.add(index)
+    for filename in dataFiles:
+	for line in open(filename, "r"):
+	    if len(line) < 2: continue
+	    parts = line[:-1].split("\t")
+	    for featPair in parts[1:]:
+	        feat, count = featPair.split(":")
+		count = float(count)
+		feat = int(feat)
+		if count == 0: continue
+		if feat not in keepFeat: continue
+		if feat not in scale or count > scale[feat]: scale[feat] = count
+    return scale
+
+args = getParameters()
+dataFiles = GetDataFiles()
+featList = LoadAllFeatures(os.path.join(args.datadir,"feat_list.txt"))
+choose = MI()  
+featScale = ScaleFeatures()
+
+f = open(args.output, "w")
+for index in choose:
+    f.write("{0} {1:.3f}\n".format(featList[index - 1], featScale[index]))
+f.close()
