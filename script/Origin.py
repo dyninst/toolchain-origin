@@ -10,7 +10,6 @@ def getParameters():
     parser.add_argument("--binpath", help="The path to the binary", required=True)
     parser.add_argument("--workingdir", help="The directory storing extracted features.The default is the current directory", default=".")
     parser.add_argument("--modeldir", help="The directory storing the CRF model and used features", default="data/")
-    parser.add_argument("--installdir", help="The directory of the installed executables", default="install/bin")
 
     args = parser.parse_args()
     return args 
@@ -156,8 +155,9 @@ def Predict(testDataFileName, addrList):
 
 
 args = getParameters()
-featBin = os.path.join(args.installdir, "extractFeat")
-crfBin = os.path.join(args.installdir, "crfsuite")
+installdir = "/".join(sys.argv[0].split("/")[:-1])
+featBin = os.path.join(installdir, "extractFeat")
+crfBin = os.path.join(installdir, "crfsuite")
 
 filename = args.binpath.split("/")[-1]
 
