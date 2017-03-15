@@ -3,14 +3,14 @@ import argparse
 import os
 from subprocess import *
 
-binFeat = "install/bin/extractFeat"
 compilerList = ["GCC", "ICC", "LLVM", "PGI"]
 
 def getParameters():
     parser = argparse.ArgumentParser(description='Identify the compiler and optimiation level that generated the binary')
     parser.add_argument("--binpath", help="The path to the binary", required=True)
-    parser.add_argument("--workingdir", help="The directory storing extracted features", required = True)
-    parser.add_argument("--modeldir", help="The directory storing the CRF model and used features")
+    parser.add_argument("--workingdir", help="The directory storing extracted features.The default is the current directory", default=".")
+    parser.add_argument("--modeldir", help="The directory storing the CRF model and used features", default="data/")
+    parser.add_argument("--installdir", help="The directory of the installed executables", default="install/bin")
 
     args = parser.parse_args()
     return args 
@@ -26,8 +26,7 @@ def ParseFeatureSize(param):
 def Execute(featType, featSize, path, filename):
     out = os.path.join(args.workingdir, "{0}.{1}.{2}".format(filename, featType, featSize))
     if os.path.isfile(out + ".featlist"): return
-    cmd = "{0} {1} {2} {3} {4}".format(binFeat, path, featType, featSize, out)
-    print cmd
+    cmd = "{0} {1} {2} {3} {4}".format(featBin, path, featType, featSize, out)
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     msg, err = p.communicate()
     if (len(err) > 0):
@@ -145,9 +144,7 @@ def ParseResults(msg):
 def Predict(testDataFileName, addrList):
     labelString = LoadLabelString()
     modelFile = os.path.join(args.modeldir, "model.dat")
-
-    cmd = "{0} tag -t -m {1} {2}".format("install/bin/crfsuite", modelFile, testDataFileName)
-    print cmd
+    cmd = "{0} tag -t -m {1} {2}".format(crfBin, modelFile, testDataFileName)
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     msg, err = p.communicate()
     if (len(err) > 0):
@@ -159,11 +156,22 @@ def Predict(testDataFileName, addrList):
 
 
 args = getParameters()
+featBin = os.path.join(args.installdir, "extractFeat")
+crfBin = os.path.join(args.installdir, "crfsuite")
+
 filename = args.binpath.split("/")[-1]
+
+# We first extract all possible features from the target binary
 idiomSizes = [1,2,3]
 graphletSizes = [1,2,3]
 GenerateFeatures("idiom", idiomSizes, args.binpath, filename)
 GenerateFeatures("graphlet", graphletSizes, args.binpath, filename)
+
+# We then load the pre-selected features and 
+# generate the testing data by only keeping the selected features
+# and scaling the feature values
 featureIndex, featureScale = LoadFeatureData()
 testDataFileName, addrList = GenerateCRFData(args.binpath)
+
+# We invoke crfsuite to perform the prediction
 Predict(testDataFileName, addrList)
