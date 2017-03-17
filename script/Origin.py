@@ -22,6 +22,18 @@ def ParseFeatureSize(param):
         ret.append(int(size))
     return ret
 
+def GetEndAddress(path, filename):
+    out = os.path.join(args.workingdir, "{0}.range".format(filename))
+    if not os.path.isfile(out):
+        cmd = "{0} {1} {2} {3} {4}".format(featBin, path, "range", 1, out)
+	p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+	msg, err = p.communicate()
+	if (len(err) > 0):
+	    print "Error message:", err
+    endAddr = open(out, "r").read()[:-1]
+    return endAddr
+
+
 def Execute(featType, featSize, path, filename):
     out = os.path.join(args.workingdir, "{0}.{1}.{2}".format(filename, featType, featSize))
     if os.path.isfile(out + ".featlist"): return
@@ -141,7 +153,6 @@ def ParseResults(msg):
         
 
 def Predict(testDataFileName, addrList):
-    labelString = LoadLabelString()
     modelFile = os.path.join(args.modeldir, "model.dat")
     cmd = "{0} tag -t -m {1} {2}".format(crfBin, modelFile, testDataFileName)
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
@@ -150,9 +161,41 @@ def Predict(testDataFileName, addrList):
         print "Error message in running", cmd ,":"
 	print err
     labels = ParseResults(msg)
-    for i in range(len(labels)):
-        print addrList[i], ":", labelString[labels[i]]
+    return labels
 
+def PrintPrediction(labelString, predict, addrList):
+    segments = []
+    start = addrList[0]
+    l = len(predict)
+    count = 1 
+    appear = set()
+    for i in range(l - 1):
+        if predict[i] != predict[i + 1]:
+	    segments.append( (predict[i], start, addrList[i+1], count) )
+	    start = addrList[i + 1]
+	count += 1
+	appear.add(predict[i])
+    appear.add(predict[l - 1])
+    segments.append( (predict[l - 1], start, endAddr, count) )
+    col = 0
+    column = {}
+    print "Address",
+    for label in range(1, len(labelString) + 1):
+        if label in appear:
+	    column[label] = col
+	    col += 1
+	    print ",", labelString[label],
+    print
+    for label, start, end, count in segments:
+        col = column[label]
+        print "[0x{0} - 0x{1})".format(start, end),
+	for j in range(len(column)):
+	    if j == col:
+	        print ",",count,
+	    else:
+	        print ", 0",
+	print
+    
 
 args = getParameters()
 installdir = "/".join(sys.argv[0].split("/")[:-1])
@@ -166,6 +209,7 @@ idiomSizes = [1,2,3]
 graphletSizes = [1,2,3]
 GenerateFeatures("idiom", idiomSizes, args.binpath, filename)
 GenerateFeatures("graphlet", graphletSizes, args.binpath, filename)
+endAddr = GetEndAddress(args.binpath, filename)
 
 # We then load the pre-selected features and 
 # generate the testing data by only keeping the selected features
@@ -174,4 +218,9 @@ featureIndex, featureScale = LoadFeatureData()
 testDataFileName, addrList = GenerateCRFData(args.binpath)
 
 # We invoke crfsuite to perform the prediction
-Predict(testDataFileName, addrList)
+predict = Predict(testDataFileName, addrList)
+labelString = LoadLabelString()
+
+PrintPrediction(labelString, predict, addrList)
+
+
