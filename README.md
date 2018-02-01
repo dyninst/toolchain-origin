@@ -12,4 +12,18 @@ The current version supports identifying three compiler families
 
 # Install
 
+The short version:
+1. First edit file ``function-features/Makefile'' and change 
+variable DYNINST_DIR to your dyninst install location
+2. ./install.sh <path-to-install>
+
+In more details, this toolchain contains three components: 
+lbfgs library, crfsuite, and feature extraction.
+
+# Usage
+To be written
+
+# Train your own model
+To be written
+
 

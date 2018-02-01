@@ -1,9 +1,11 @@
 CXX	        = g++
 CXXFLAGS        = -g -Wall -std=c++0x -O2 -D_GLIBCXX_USE_CXX11_ABI=0 
 
-INC = -I$(DYNINST_ROOT)/$(PLATFORM)/include -I$(GPERF)/include
-LIB = -L$(DYNINST_ROOT)/$(PLATFORM)/lib -L$(LIBDWARF) -L$(GPERF)/lib -L$(ELF_LIB)
-DEP = -lparseAPI -linstructionAPI -lsymtabAPI -ldynDwarf -ldwarf -ldynElf -lelf -lcommon
+DYNINST_DIR = /p/paradyn/development/xmeng/dyninstapi/dyninst_development/x86_64-unknown-linux2.4
+
+INC = -I$(DYNINST_DIR)/include
+LIB = -L$(DYNINST_DIR)/lib
+DEP = -lparseAPI -linstructionAPI -lsymtabAPI -ldynDwarf -ldw -ldynElf -lelf -lcommon
 
 all: extractFeat
 
