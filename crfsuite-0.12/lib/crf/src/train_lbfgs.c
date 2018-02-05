@@ -143,12 +143,6 @@ static int lbfgs_progress(
         if (x[i] != 0.) ++num_active_features;
     }
     
-    if (k % 10 == 0) {
-        snprintf(cmd, 128, "/bin/sh test.sh %d", k);
-        gm->save_model(gm, "model.dat", x, lg);
-	system(cmd);
-    }
-
     /* Report the progress. */
     logging(lg, "***** Iteration #%d *****\n", k);
     logging(lg, "Loss: %f\n", fx);

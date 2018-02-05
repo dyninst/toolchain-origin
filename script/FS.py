@@ -8,7 +8,7 @@ compilerList = ["GCC", "ICC", "LLVM", "PGI"]
 def getParameters():
     parser = argparse.ArgumentParser(description='Perform feature selection')
     parser.add_argument("--filelist", help="A list of binaries for training", required=True)
-    parser.add_argument("--datadir", help="The directory storing extracted features", required = True)
+    parser.add_argument("--datadir", help="The directory storing generated data files", required = True)
     parser.add_argument("--keep", type=int, help="The number of selected features", required= True)
     parser.add_argument("--output", help="The output file of chosen features", required=True)
     args = parser.parse_args()
@@ -133,5 +133,5 @@ featScale = ScaleFeatures()
 
 f = open(args.output, "w")
 for index in choose:
-    f.write("{0} {1:.3f}\n".format(featList[index - 1], featScale[index]))
+    f.write("{0} {1} {2:.3f}\n".format(index, featList[index - 1], featScale[index]))
 f.close()

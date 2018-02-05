@@ -9,8 +9,9 @@ compilerList = ["GCC", "ICC", "LLVM", "PGI"]
 def getParameters():
     parser = argparse.ArgumentParser(description='Perform feature selection')
     parser.add_argument("--filelist", help="A list of binaries for training", required=True)
-    parser.add_argument("--datadir", help="The directory storing extracted features", required = True)
+    parser.add_argument("--datadir", help="The directory storing the generated data files", required = True)
     parser.add_argument("--featurelist", help="The list of chosen features", required= True)
+    parser.add_argument("--path_to_crfsuite", help="The full path to the crfsuite executable", required=True)
     args = parser.parse_args()
     return args 
 
@@ -68,7 +69,7 @@ def GenerateCRFData(featIndex, featScale, files, dataFileName):
     return dataFileName
 
 def CRFTrain(trainFile):
-    cmd = "{0} learn -m model.dat -a lbfgs -p max_iterations={1} {2}".format("../install/bin/crfsuite", 1500, trainFile)
+    cmd = "{0} learn -m model.dat -a lbfgs -p max_iterations={1} {2}".format(args.path_to_crfsuite, 1500, trainFile)
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     msg, err = p.communicate()
     if (len(err) > 0):
@@ -84,7 +85,7 @@ def KeepFeatures():
     i = 0
     for line in open(args.featurelist, "r"):    
         i += 1
-        index, feat = line[:-1].split()
+        index, featStr, feat = line[:-1].split()
 	index = int(index)
 	keepFeat[index] = i
     for filename in trainDataFiles:
@@ -103,5 +104,5 @@ def KeepFeatures():
 args = getParameters()
 trainDataFiles = GetFiles(args.filelist)
 keptFeatIndex, featScale = KeepFeatures()
-trainFile = GenerateCRFData(keptFeatIndex, featScale, trainDataFiles, "/nobackup/xmeng/tmp.crf.train.txt")
+trainFile = GenerateCRFData(keptFeatIndex, featScale, trainDataFiles, "./tmp.crf.train.txt")
 CRFTrain(trainFile)

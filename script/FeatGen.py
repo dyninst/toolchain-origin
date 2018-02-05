@@ -3,16 +3,15 @@ import argparse
 import os
 from subprocess import *
 
-binFeat = "../install/bin/extractFeat"
 compilerList = ["GCC", "ICC", "LLVM", "PGI"]
 
 def getParameters():
     parser = argparse.ArgumentParser(description='Extract function level code features for toolchain identification')
     parser.add_argument("--filelist", help="A list of binaries to extract features", required=True)
     parser.add_argument("--outputdir", help="The directory to store extracted features", required = True)
-    parser.add_argument("--idiom", help="Extract instruction idioms with specified sizes")
+    parser.add_argument("--idiom", help="Extract instruction idioms with specified sizes.")
     parser.add_argument("--graphlet", help="Extract graphlets for functions")
-
+    parser.add_argument("--path_to_extract_bin", help="The installed binary for extracting features", required=True)
     args = parser.parse_args()
     return args 
 
@@ -27,7 +26,7 @@ def ParseFeatureSize(param):
 def Execute(featType, featSize, path, filename):
     global featureDir
     out = os.path.join(featureDir, "{0}.{1}.{2}".format(filename, featType, featSize))
-    cmd = "{0} {1} {2} {3} {4}".format(binFeat, path, featType, featSize, out)
+    cmd = "{0} {1} {2} {3} {4}".format(args.path_to_extract_bin, path, featType, featSize, out)
     print cmd
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     msg, err = p.communicate()

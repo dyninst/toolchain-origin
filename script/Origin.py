@@ -10,6 +10,7 @@ def getParameters():
     parser.add_argument("--binpath", help="The path to the binary", required=True)
     parser.add_argument("--workingdir", help="The directory storing extracted features.The default is the current directory", default=".")
     parser.add_argument("--modeldir", help="The directory storing the CRF model and used features", default="data/")
+    parser.add_argument("--installdir", help="The install directory of toolchain-origin")
 
     args = parser.parse_args()
     return args 
@@ -131,8 +132,8 @@ def LoadFeatureData():
     for line in open(featureFile, "r"):
         parts = line[:-1].split()
 	count += 1
-	index[parts[0]] = count
-	scale.append(float(parts[1]))
+	index[parts[1]] = count
+	scale.append(float(parts[2]))
     return index, scale
 
 def LoadLabelString():
@@ -198,9 +199,12 @@ def PrintPrediction(labelString, predict, addrList):
     
 
 args = getParameters()
-installdir = "/".join(sys.argv[0].split("/")[:-1])
-featBin = os.path.join(installdir, "extractFeat")
-crfBin = os.path.join(installdir, "crfsuite")
+if args.installdir == None:
+    installdir = "/".join(sys.argv[0].split("/")[:-1])
+else:
+    installdir = args.installdir
+featBin = os.path.join(installdir, "bin",  "extractFeat")
+crfBin = os.path.join(installdir, "bin", "crfsuite")
 
 filename = args.binpath.split("/")[-1]
 
