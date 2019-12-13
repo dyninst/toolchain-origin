@@ -35,7 +35,7 @@
 #include <unordered_map>
 #include <set>
 
-#include "Operation.h"
+#include "Operation_impl.h"
 #include "Register.h"
 #include "CFG.h"
 #include "CodeSource.h"

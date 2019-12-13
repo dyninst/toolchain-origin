@@ -33,18 +33,11 @@ bool COLOR = true;
 
 unsigned short node_insns_color(Block * A)
 {
-    using namespace Dyninst::InstructionAPI;
     unsigned short ret = 0;
-    
-    CodeRegion * cr = A->region();
-    const unsigned char* bufferBegin =
-            (const unsigned char*)(cr->getPtrToInstruction(A->start()));
-    if(!bufferBegin)
-        return 0;
-
-    InstructionDecoder dec(bufferBegin, A->end() - A->start(), cr->getArch());
-    while(Instruction::Ptr insn = dec.decode()) {
-        InsnColor::insn_color c = InsnColor::lookup(insn);    
+    Block::Insns insns;
+    A->getInsns(insns);
+    for (auto iit = insns.begin(); iit != insns.end(); ++iit) {
+        InsnColor::insn_color c = InsnColor::lookup(iit->second);    
         if(c != InsnColor::NOCOLOR) {
             assert(c <= 16);
             ret |= (1 << c); 
@@ -59,15 +52,9 @@ unsigned short node_branch_color(Block * A)
     using namespace Dyninst::InstructionAPI;
     unsigned short ret = BranchColor::NOBRANCH;
     
-    CodeRegion * cr = A->region();
-    const unsigned char* bufferBegin =
-            (const unsigned char*)(cr->getPtrToInstruction(A->last()));
-    if(!bufferBegin)
-        return 0;
-
-    InstructionDecoder dec(bufferBegin, A->end() - A->last(), cr->getArch());
-    Instruction::Ptr insn = dec.decode();
-    BranchColor::branch_color c = BranchColor::lookup(insn);    
+    Block::Insns insns;
+    A->getInsns(insns);
+    BranchColor::branch_color c = BranchColor::lookup(insns.rbegin()->second);    
     ret = c; 
     return ret; 
 }

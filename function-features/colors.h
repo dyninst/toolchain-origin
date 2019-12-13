@@ -51,7 +51,7 @@ class BranchColor : public Color {
         NOBRANCH
     };
 
-    static branch_color lookup(Dyninst::InstructionAPI::Instruction::Ptr insn);
+    static branch_color lookup(Dyninst::InstructionAPI::Instruction insn);
 
     BranchColor(unsigned short s)
       : s_(s) 
@@ -88,7 +88,7 @@ class InsnColor : public Color {
         NOCOLOR
     };
 
-    static insn_color lookup(Dyninst::InstructionAPI::Instruction::Ptr insn);
+    static insn_color lookup(Dyninst::InstructionAPI::Instruction insn);
     static std::map<unsigned short, InsnColor*> insnColorMap;
     static InsnColor* ColorLookup(unsigned short);
 

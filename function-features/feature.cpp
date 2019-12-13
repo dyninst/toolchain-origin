@@ -132,7 +132,6 @@ FeatureVector::~FeatureVector() {
 
 int
 FeatureVector::eval(int size, Function *f, bool idioms, bool operands) {
-    Instruction::Ptr insn;
 
     _feats.clear();
     (*_begin) = (*_end);
@@ -140,24 +139,15 @@ FeatureVector::eval(int size, Function *f, bool idioms, bool operands) {
     Function::blocklist::iterator bit = f->blocks().begin();
     for( ; bit != f->blocks().end(); ++bit) {
         Block * b = *bit;
-        Address cur = b->start();
-        void * buf  = b->region()->getPtrToInstruction(b->start());
-        if(!buf) {
-            continue;
-        }
-
-        InstructionDecoder dec((unsigned char*)buf,b->size(),
-            b->region()->getArch());
-
-        while((insn = dec.decode())) {
+        Block::Insns insns;
+        b->getInsns(insns);
+        for (auto iit = insns.begin(); iit != insns.end(); ++iit) {
             if(idioms)
-                iflookup.lookup(size, f,cur, b->end(), _feats);
+                iflookup.lookup(size, f, iit->first, b->end(), _feats);
             if(operands)
-                oflookup.lookup(size, f,cur, b->end(), _feats);
-            cur += insn->size(); 
+                oflookup.lookup(size, f, iit->first, b->end(), _feats);
         }
     }
-
     if(!_feats.empty())
         _begin->_m_ind = 0;
         
@@ -167,29 +157,19 @@ FeatureVector::eval(int size, Function *f, bool idioms, bool operands) {
 
 int
 FeatureVector::eval_cross_blk(int size, Function *f, bool idioms, bool operands) {
-    Instruction::Ptr insn;
-
     _feats.clear();
     (*_begin) = (*_end);
 
     Function::blocklist::iterator bit = f->blocks().begin();
     for( ; bit != f->blocks().end(); ++bit) {
         Block * b = *bit;
-        Address cur = b->start();
-        void * buf  = b->region()->getPtrToInstruction(b->start());
-        if(!buf) {
-            continue;
-        }
-
-        InstructionDecoder dec((unsigned char*)buf,b->size(),
-            b->region()->getArch());
-
-        while((insn = dec.decode())) {
+        Block::Insns insns;
+        b->getInsns(insns);
+        for (auto iit = insns.begin(); iit != insns.end(); ++iit) {
             if(idioms)
-                iflookup.lookup_cross_blk(size, f, b, cur,_feats);
+                iflookup.lookup_cross_blk(size, f, b, iit->first,_feats);
             if(operands)
-                oflookup.lookup(size, f,cur,b->end(), _feats);
-            cur += insn->size(); 
+                oflookup.lookup(size, f, iit->first, b->end(), _feats);
         }
     }
 

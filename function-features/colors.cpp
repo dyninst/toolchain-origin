@@ -2,7 +2,7 @@
 #include <map>
 
 #include <Instruction.h>
-#include <Operation.h>
+#include <Operation_impl.h>
 #include <entryIDs.h>
 
 #include "colors.h"
@@ -516,9 +516,9 @@ boost::assign::map_list_of
 }
 
 InsnColor::insn_color
-InsnColor::lookup(Instruction::Ptr insn)
+InsnColor::lookup(Instruction insn)
 {
-    std::map<entryID,InsnColor::insn_color>::iterator it = colormap.find(insn->getOperation().getID());
+    std::map<entryID,InsnColor::insn_color>::iterator it = colormap.find(insn.getOperation().getID());
     if(it != colormap.end())
         return (*it).second;
     else
@@ -526,10 +526,10 @@ InsnColor::lookup(Instruction::Ptr insn)
 }
 
 BranchColor::branch_color
-BranchColor::lookup(Instruction::Ptr insn)
+BranchColor::lookup(Instruction insn)
 {
     std::map<entryID,BranchColor::branch_color>::iterator it = 
-        branchmap.find(insn->getOperation().getID());
+        branchmap.find(insn.getOperation().getID());
     if(it != branchmap.end())
         return (*it).second;
     else

@@ -204,7 +204,7 @@ get_operands(
     Function *f, Address addr, 
     vector<OperandTerm *> & operands)
 {
-    Instruction::Ptr insn;
+    Instruction insn;
 
     if(!f->isrc()->getPtrToInstruction(addr))
         return;
@@ -214,10 +214,10 @@ get_operands(
         30, //arbitrary
         f->isrc()->getArch());
     insn = dec.decode();
-    if(insn) {
+    if(insn.size() > 0 && insn.isValid()) {
         vector<Operand> ops;
         ExpTyper typer;
-        insn->getOperands(ops);
+        insn.getOperands(ops);
         for(unsigned int i=0;i<ops.size();++i) {
             Operand & op = ops[i];
             unsigned short opid;
@@ -259,7 +259,7 @@ template<>
 void Lookup<OperandFeature>::lookup(
     int size, Function *f, Address addr, Address end, vector<Feature *> & feats)
 {
-    Instruction::Ptr insn;
+    Instruction insn;
 
     /* for each operand here, we want to record a new feature for bigrams
        with operands up to MAX_OPERAND_DIST away */
@@ -278,8 +278,8 @@ void Lookup<OperandFeature>::lookup(
         unsigned d = size;
         if(!f->isrc()->getPtrToInstruction(cur))
             return;
-        insn = dec.decode((unsigned char*)f->isrc()->getPtrToInstruction(addr));
-        cur += insn->size(); 
+        insn = dec.decode();
+        cur += insn.size(); 
 
         if(_term_map.find(cur) == _term_map.end())
             get_operands(f,cur,_term_map[cur]);

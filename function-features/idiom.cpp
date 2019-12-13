@@ -56,26 +56,26 @@ IdiomTerm::IdiomTerm(Function *f, Address addr) :
     arg2(NOARG),
     len(0)
 {
-    Instruction::Ptr insn;
+    Instruction insn;
     InstructionDecoder dec(
         (unsigned char*)f->isrc()->getPtrToInstruction(addr),
         30, // arbitrary
         f->isrc()->getArch());
 
     insn = dec.decode();
-    if(insn) { 
+    if(insn.size() > 0 && insn.isValid()) { 
         // set representation
 
-        len = insn->size();
+        len = insn.size();
 
-        const Operation & op = insn->getOperation();
+        const Operation & op = insn.getOperation();
         entry_id = op.getID() + 1;
 
 //        fprintf(stderr,"IT[%d,%d",entry_id,len);
 
         if(entry_id != ILLEGAL_ENTRY) {
             vector<Operand> ops;
-            insn->getOperands(ops);
+            insn.getOperands(ops);
 //            fprintf(stderr,",%ld",ops.size());
             
             // we'll take up to two operands... which seems bad. FIXME
@@ -127,25 +127,25 @@ IdiomTerm::IdiomTerm(SymtabCodeSource *sts, Address addr) :
     arg2(NOARG),
     len(0)
 {
-    Instruction::Ptr insn;
+    Instruction insn;
     InstructionDecoder dec(
         (unsigned char*)(sts->getPtrToInstruction(addr)),
         30, // arbitrary
         sts->getArch());
 
     insn = dec.decode();
-    if(insn) { 
+    if(insn.size() > 0 && insn.isValid()) { 
         // set representation
 
-        len = insn->size();
+        len = insn.size();
 
-        const Operation & op = insn->getOperation();
+        const Operation & op = insn.getOperation();
         entry_id = op.getID() + 1;
 //        fprintf(stderr,"IT[%d,%d",entry_id,len);
 
         if(entry_id != ILLEGAL_ENTRY) {
             vector<Operand> ops;
-            insn->getOperands(ops);
+            insn.getOperands(ops);
 //            fprintf(stderr,",%ld",ops.size());
             
             // we'll take up to two operands... which seems bad. FIXME
@@ -167,7 +167,7 @@ IdiomTerm::IdiomTerm(SymtabCodeSource *sts, Address addr) :
 
                     if(!regs.empty()) {
 		        if (regs.size() > 2) {
-			    fprintf(stderr, "%s touches more than two registers in one operand\n", insn->format().c_str());
+			    fprintf(stderr, "%s touches more than two registers in one operand\n", insn.format().c_str());
 			    exit(0);
 			}
 		        if (regs.size() > 1) {
