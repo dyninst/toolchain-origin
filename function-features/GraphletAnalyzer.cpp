@@ -89,45 +89,31 @@ func_to_graph(ParseAPI::Function * f, dyn_hash_map<Address,bool> & seen, ColorTy
     return g;
 }
 
-void GraphletAnalyzer::Analyze() {
-//    fprintf(stderr, "Start graphlet extraction\n");
-    featFile = fopen(string(outPrefix + ".instances").c_str(), "w");
-    for (auto fit = co->funcs().begin(); fit != co->funcs().end(); ++fit) {
-        Function *f = *fit;
-	if (!InTextSection(f)) continue;
-	fprintf(featFile, "%lx", f->addr());
-	
-	map<graphlet,int> c1, c2;
-	map<string, int> c;
-	dyn_hash_map<Address, bool> visited;
-
-	// Instruction graphlet
-	graph * g = func_to_graph(f,visited, INSNSCOLOR);
-	g->mkgraphlets_new(featSize, c1, color, ANON);
-	delete g; 
-
-
-        // Branch graphlets
-	visited.clear();
-	g = func_to_graph(f, visited, BRANCHCOLOR);
-	g->mkgraphlets_new(featSize, c2, color, ANON);
-	delete g;
-
-        // Generate graphlet string representation
-	for (auto cit=c1.begin(); cit != c1.end(); ++cit){
-	    string f = "G_" + (cit->first).compact(color);
-	    c[f] += 1;
-	}
-	for (auto cit=c2.begin(); cit != c2.end(); ++cit){
-	    string f = "B_" + (cit->first).compact(color);
-	    c[f] += 1;
-	}
-
-	for (auto cit=c.begin(); cit != c.end(); ++cit) {
-	    AddAndPrintFeat(cit->first, cit->second);
-        }
-        fprintf(featFile, "\n");
+void GraphletAnalyzer::ProduceAFunction(InstanceDataType* idt) {
+    ParseAPI::Function *f = idt->f;
+    map<graphlet,int> c1, c2;
+    dyn_hash_map<Address, bool> visited;
+    
+    // Instruction graphlet
+    graph * g = func_to_graph(f,visited, INSNSCOLOR);
+    g->mkgraphlets_new(featSize, c1, color, ANON);
+    delete g; 
+    
+    // Branch graphlets
+    visited.clear();
+    g = func_to_graph(f, visited, BRANCHCOLOR);
+    g->mkgraphlets_new(featSize, c2, color, ANON);
+    delete g;
+    
+    // Generate graphlet string representation
+    for (auto pair : c1){
+        string f = "G_" + (pair.first).compact(color);
+        idt->featPair[f] += pair.second;
+    }  
+    
+    for (auto pair : c2){
+        string f = "B_" + (pair.first).compact(color);
+        idt->featPair[f] += pair.second;
     }
-    fclose(featFile);
 }
 

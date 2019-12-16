@@ -9,8 +9,6 @@
 
 #include <set>
 #include <vector>
-#include <iostream>
-#include <sstream>
 
 using namespace std;
 using namespace Dyninst;
@@ -89,29 +87,36 @@ class edgeset {
     }
 
     std::string toString() const {
-        std::stringstream ret;
+        char buf[256];
+        std::string ret;        
         std::vector<int>::const_iterator it = types_.begin();
         for( ; it != types_.end(); ++it) {
-            ret << " " << *it;
+            snprintf(buf, 256, "%d", *it);
+            ret += " ";
+            ret += buf;
         }
-        return ret.str();
+        return ret;
     }
 
     std::string compact() const {
-        std::stringstream ret;
+        char buf[256];
+        std::string ret;
         std::map<int,int> unique;
         std::vector<int>::const_iterator it = types_.begin();
         for( ; it != types_.end(); ++it)
             unique[*it] +=1;
         std::map<int,int>::iterator uit = unique.begin();
         for( ; uit != unique.end(); ) {
-            ret << (*uit).first;
-            if((*uit).second > 1)
-                ret << "x" << (*uit).second;
+            ret += (*uit).first;
+            if((*uit).second > 1) {
+                snprintf(buf, 256, "%d", (*uit).second);
+                ret += "x";
+                ret += buf;
+            }
             if(++uit != unique.end())
-                ret << ".";
+                ret += ".";
         }
-        return ret.str();
+        return ret;
     }
 
  private:
@@ -200,24 +205,24 @@ class graphlet {
     }
 
     std::string toString() const {
-        std::stringstream ret;
+        std::string ret;
         std::multiset<node>::const_iterator it = nodes_.begin();
         for( ; it != nodes_.end(); ++it) {
-            ret << (*it).toString() << " ";
+            ret += (*it).toString() + " ";
         }
-        return ret.str();
+        return ret;
     }
 
     std::string compact(bool color) const {
-        std::stringstream ret;
+        std::string ret;
         std::multiset<node>::const_iterator it = nodes_.begin();
 
         for( ; it != nodes_.end(); ) {
-            ret << (*it).compact(color);
+            ret += (*it).compact(color);
             if(++it != nodes_.end())
-                ret << "_";
+                ret += "_";
         }
-        return ret.str();
+        return ret;
     }
 
     unsigned size() const { return nodes_.size(); }

@@ -99,20 +99,20 @@ void node::print() const {
 }
 
 std::string node::toString() const {
-    std::stringstream ret;
-    ret << "[ {" << ins_.toString() << " }";
-    ret << " {" << outs_.toString() << " }";
-    ret << " {" << self_.toString() << " } ]";
-    return ret.str();
+    std::string ret;
+    ret += "[ {" + ins_.toString() + " }";
+    ret += " {" + outs_.toString() + " }";
+    ret += " {" + self_.toString() + " } ]";
+    return ret;
 }
 
 std::string node::compact(bool colors) const {
-    std::stringstream ret;
-    ret << ins_.compact() << "/" ;
-    ret << outs_.compact() << "/";
-    ret << self_.compact();
+    std::string ret;
+    ret += ins_.compact() + "/" ;
+    ret += outs_.compact() + "/";
+    ret += self_.compact();
     if(colors && color_ != NULL)
-        ret << "/" << color_->compact();
-    return ret.str();
+        ret += "/" + color_->compact();
+    return ret;
 }
 

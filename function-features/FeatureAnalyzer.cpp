@@ -3,6 +3,7 @@
 #include "FeatureAnalyzer.h"
 
 #include "CodeSource.h"
+#include <thread>
 
 using namespace std;
 
@@ -18,49 +19,81 @@ void FeatureAnalyzer::PrintFeatureList() {
     fclose(f);
 }
 
+FeatureAnalyzer::FeatureAnalyzer() {}
+
+void FeatureAnalyzer::Analyze() {
+    featFile = fopen(string(outPrefix + ".instances").c_str(), "w");
+    std::thread t1(&FeatureAnalyzer::Consume, this);
+    std::thread t2(&FeatureAnalyzer::Produce, this);
+    t2.join();
+    q.finish();
+    t1.join();    
+
+    fclose(featFile);
+    PrintFeatureList();
+
+}
+
+
 int FeatureAnalyzer::Setup(const char *bPath, int fSize, const char *oPre) {
     featSize = fSize;
     outPrefix = string(oPre);
-    totalFeatures = 0;
-    
+
     SymtabCodeSource *sts = new SymtabCodeSource((char *)bPath);
     if (sts == NULL) {
         fprintf(stderr, "Cannot create SymtabCodeSource for %s\n", bPath);
-	return -1;
+        return -1;
     }
     co = new CodeObject(sts);
     if (co == NULL) {
         fprintf(stderr, "Cannot create CodeObject for %s\n", bPath);
-	return -1;
+        return -1;
     }
     co->parse();
     return 0;
 }
 
-int FeatureAnalyzer::GetFeatIndex(const std::string &feat) {
-    auto fit = featureIndex.find(feat);
-    if (fit == featureIndex.end()) return -1;
-    return fit->second;
-}
-
-void FeatureAnalyzer::AddFeat(const std::string &feat) {
-    auto fit = featureIndex.find(feat);
-    if (fit == featureIndex.end()) {
-        ++totalFeatures;
-	featureIndex.insert(make_pair(feat, totalFeatures));
+int FeatureAnalyzer::GetFeatureIndex(const std::string &feat) {
+    auto it = featureIndex.find(feat);
+    if (it == featureIndex.end()) {
+        int newIndex = featureIndex.size() + 1;
+        featureIndex[feat] = newIndex;
+        return newIndex;
+    } else {
+        return it->second;
     }
 }
 
-void FeatureAnalyzer::AddAndPrintFeat(const std::string &feat, double count) {
-    AddFeat(feat);
-    int index = GetFeatIndex(feat);
-    fprintf(featFile, " %d:%.3f", index, count);
+void FeatureAnalyzer::Consume() {
+    while (true) {
+        InstanceDataType* it = (InstanceDataType*) q.dequeue();
+        if (it == NULL) break;
+        fprintf(featFile, "%lx", it->f->addr());
+        for (auto pair : it->featPair) {
+            int index = GetFeatureIndex(pair.first);
+            fprintf(featFile, " %d:%.3lf", index, pair.second);
+        }
+        fprintf(featFile, "\n");
+        delete it;
+    }
 }
 
-FeatureAnalyzer::FeatureAnalyzer() {}
+void FeatureAnalyzer::Produce() {
+    std::vector<ParseAPI::Function*> fvec;
+    for (auto fit = co->funcs().begin(); fit != co->funcs().end(); ++fit) {
+        fvec.push_back(*fit);
+    }
 
-void FeatureAnalyzer::Analyze() {
-    fprintf(stderr, "Call FeatureAnalyzer::Analyze(). Do nothing.\n");
+#pragma omp parallel for schedule(auto)
+    for (size_t i = 0; i < fvec.size(); ++i) {
+        ParseAPI::Function *f = fvec[i];
+        if (!InTextSection(f)) continue;
+
+        InstanceDataType* idt = new InstanceDataType();
+        idt->f = f;
+        ProduceAFunction(idt);
+        q.enqueue((void*)idt);
+    }
 }
 
 bool FeatureAnalyzer::InTextSection(Dyninst::ParseAPI::Function *f) {

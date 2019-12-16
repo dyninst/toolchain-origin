@@ -536,10 +536,11 @@ BranchColor::lookup(Instruction insn)
         return NOBRANCH;
 }
 
+
 static std::string inttostring(int i) {
-    std::stringstream ret;
-    ret << i;
-    return ret.str();
+    char buf[256];
+    snprintf(buf, 256, "%d", i);
+    return std::string(buf);
 }
 
 std::string BranchColor::compact() const { 

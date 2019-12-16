@@ -12,6 +12,7 @@ def getParameters():
     parser.add_argument("--idiom", help="Extract instruction idioms with specified sizes.")
     parser.add_argument("--graphlet", help="Extract graphlets for functions")
     parser.add_argument("--path_to_extract_bin", help="The installed binary for extracting features", required=True)
+    parser.add_argument("--thread", help="The number of threads for feature extraction", type=int, default=1)
     args = parser.parse_args()
     return args 
 
@@ -26,7 +27,9 @@ def ParseFeatureSize(param):
 def Execute(featType, featSize, path, filename):
     global featureDir
     out = os.path.join(featureDir, "{0}.{1}.{2}".format(filename, featType, featSize))
-    cmd = "{0} {1} {2} {3} {4}".format(args.path_to_extract_bin, path, featType, featSize, out)
+    cmd = "OMP_NUM_THREADS={0} ".format(args.thread)
+    cmd += "LD_PRELOAD=/home/xm13/dyninst-pp/install/lib/libtbbmalloc_proxy.so "
+    cmd += "{0} {1} {2} {3} {4}".format(args.path_to_extract_bin, path, featType, featSize, out)
     print cmd
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     msg, err = p.communicate()
