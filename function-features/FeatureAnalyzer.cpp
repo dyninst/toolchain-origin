@@ -7,6 +7,11 @@
 
 using namespace std;
 
+struct FuncSort {
+    bool operator() (ParseAPI::Function *a, ParseAPI::Function *b) {
+        return a->num_blocks() > b->num_blocks();
+    }
+};
 void FeatureAnalyzer::PrintFeatureList() {
     string listFile = outPrefix + ".featlist";
     FILE *f = fopen(listFile.c_str(), "w");
@@ -81,16 +86,15 @@ void FeatureAnalyzer::Consume() {
 void FeatureAnalyzer::Produce() {
     std::vector<ParseAPI::Function*> fvec;
     for (auto fit = co->funcs().begin(); fit != co->funcs().end(); ++fit) {
-        fvec.push_back(*fit);
+        if (InTextSection(*fit))
+            fvec.push_back(*fit);
     }
+    sort(fvec.begin(), fvec.end(), FuncSort());
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < fvec.size(); ++i) {
-        ParseAPI::Function *f = fvec[i];
-        if (!InTextSection(f)) continue;
-
         InstanceDataType* idt = new InstanceDataType();
-        idt->f = f;
+        idt->f = fvec[i];
         ProduceAFunction(idt);
         q.enqueue((void*)idt);
     }
